@@ -3,7 +3,7 @@ from aigyminsper.search.graph import State
 
 class AspiradorPo(State):
     # op é a operacao que o agente usou para chegar no estado que ele esta
-    def __init__(self, op, posicao_robo, condicao_esq, condicao_dir):
+    def __init__(self, op, posicao_robo, condicao_esq, condicao_dir, cima, baixo):
         # voce sempre deve usar esta chamada para inicializar a superclasse
         super().__init__(op)
         # posicao_robo = esq ou dir
@@ -13,29 +13,41 @@ class AspiradorPo(State):
         # condicao_dir = sujo ou limpo
         self.condicao_dir = condicao_dir
 
+        self.cima = cima
+        self.baixo = baixo
+
     def successors(self):
         # lista de objetos da classe AspiradorPo
         successors = []
 
         # ir p/ esq
-        successors.append(AspiradorPo('ir p/ esq', 'esq', self.condicao_esq, self.condicao_dir)) 
+        successors.append(AspiradorPo('ir p/ esq', 'esq', self.condicao_esq, self.condicao_dir, self.cima, self.baixo)) # self serve para manter a posicao que ele estava antes dessa acao
         # ir p/ dir
-        successors.append(AspiradorPo('ir p/ dir', 'dir', self.condicao_esq, self.condicao_dir)) # self serve para manter a posicao que ele estava antes dessa acao
+        successors.append(AspiradorPo('ir p/ dir', 'dir', self.condicao_esq, self.condicao_dir, self.cima, self.baixo)) # self serve para manter a posicao que ele estava antes dessa acao
+
+        successors.append(AspiradorPo('ir p/ cima', 'cima', self.condicao_esq, self.condicao_dir, self.cima, self.baixo))
+        successors.append(AspiradorPo('ir p/ baixo', 'baixo', self.condicao_esq, self.condicao_dir, self.cima, self.baixo))
 
         # limpar
         if self.posicao_robo == 'esq':
-            successors.append(AspiradorPo('limpar', self.posicao_robo, 'limpo', self.condicao_dir))
+            successors.append(AspiradorPo('limpar', self.posicao_robo, 'limpo', self.condicao_dir, self.cima, self.baixo))
         if self.posicao_robo == 'dir':
-            successors.append(AspiradorPo('limpar', self.posicao_robo, self.condicao_esq, 'limpo'))
+            successors.append(AspiradorPo('limpar', self.posicao_robo, self.condicao_esq, 'limpo', self.cima, self.baixo))
+        
+        if self.posicao_robo == 'cima':
+            successors.append(AspiradorPo('limpar', 'cima', self.condicao_esq, self.condicao_dir, 'limpo', self.baixo))
 
+        if self.posicao_robo == 'baixo':
+            successors.append(AspiradorPo('limpar', 'baixo', self.condicao_esq, self.condicao_dir, self.cima, 'limpo'))
+            
         return successors
     
     def is_goal(self):
-        return self.condicao_esq == 'limpo' and self.condicao_dir == 'limpo'
+        return self.condicao_esq == 'limpo' and self.condicao_dir == 'limpo' and self.cima == 'limpo' and self.baixo == 'limpo'
     
     
     def description(self):
-        return "Problema do aspirador de pó de 2 quartos"
+        return "Problema do aspirador de pó de 4 quartos"
     
     def cost(self): # mostra o custo de cada acao, e como limpar, ir para dir e esq tem o mesmo custo, sempre eh 1
         return 1
@@ -58,7 +70,7 @@ class AspiradorPo(State):
         None
 
 def main():
-    estado_inicial = AspiradorPo('', 'esq', 'sujo', 'sujo') # como o agente nao fez nenhuma operacao ainda, deixar vazio
+    estado_inicial = AspiradorPo('', 'esq', 'sujo', 'sujo', 'sujo', 'sujo') # como o agente nao fez nenhuma operacao ainda, deixar vazio
     algorithm = BuscaLargura()
     result = algorithm.search(estado_inicial) # sabe todo o caminho, pensando como se fosse uma arvore genealogica
     if result != None:
